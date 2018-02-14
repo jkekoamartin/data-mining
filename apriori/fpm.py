@@ -9,31 +9,26 @@
 
 # read data
 
-data = open('T10I4D100K.dat')
-ln = []
 
-for line in data:
-    ln += [line.split()]
-
-# 'T10I4D100K.dat' is stored in list of lists, where each index in 'ln' is line of 'T10I4D100K.dat'
 #
-# run alg
-fpm = {}
-unique = 0
-for row in ln:
-    for column in row:
-        if column not in fpm.keys():
-            fpm[column] = 1
-            unique += 1
-        else:
-            fpm[column] += 1
-
-
-#save output to file
-print(str(unique) + " unique values")
-
-for x in fpm.keys():
-    print(str(x) + " (" + str(fpm[x]) + ")")
+# # 'T10I4D100K.dat' is stored in list of lists, where each index in 'ln' is line of 'T10I4D100K.dat'
+# #
+# # run alg
+# fpm = {}
+# unique = 0
+# for row in ln:
+#     for column in row:
+#         if column not in fpm.keys():
+#             fpm[column] = 1
+#             unique += 1
+#         else:
+#             fpm[column] += 1
+#
+# # save output to file
+# print(str(unique) + " unique values")
+#
+# for x in fpm.keys():
+#     print(str(x) + " (" + str(fpm[x]) + ")")
 
 # *************Apriori Algorithm*************
 # Zealseeker | www.zealseeker.com
@@ -53,11 +48,13 @@ import itertools
 
 
 class Apriori:
-    def __init__(self, min_sup=0.2, dataDic={}):
+    def __init__(self, min_sup=0.2, dataDic=None):
+        if dataDic is None:
+            dataDic = {}
         self.data = dataDic
         self.size = len(dataDic)  # Get the number of events
         self.min_sup = min_sup
-        self.min_sup_val = min_sup * self.size
+        self.min_sup_val = 500
 
     def find_frequent_1_itemsets(self):
         FreqDic = {}  # {itemset1:freq1,itemsets2:freq2}
@@ -68,8 +65,9 @@ class Apriori:
                 else:
                     FreqDic[item] = 1
         L1 = []
+
         for itemset in FreqDic:
-            if itemset >= self.min_sup_val:
+            if FreqDic[itemset] >= self.min_sup_val:
                 L1.append([itemset])
         return L1
 
@@ -91,7 +89,7 @@ class Apriori:
                 for i in range(k - 2):
                     if itemset1[i] != itemset2[i]:
                         flag = 1  # the two itemset can't join
-                        break;
+                        break
                 if flag == 1: continue
                 if itemset1[k - 2] < itemset2[k - 2]:
                     c = itemset1 + [itemset2[k - 2]]
@@ -120,18 +118,30 @@ class Apriori:
                             FreqDic[tuple(c)] += 1
                         else:
                             FreqDic[tuple(c)] = 1
-            print
-            FreqDic
             Lk = []
             for c in FreqDic:
                 if FreqDic[c] > self.min_sup_val:
                     Lk.append(list(c))
             L_last = Lk
             L += Lk
+            print("hello")
+            print(L)
         return L
 
 
 # ******Test******
+# data = open('T10I4D100K.dat')
+# ln = []
+#
+# for line in data:
+#     ln += [line.split()]
+#
+# Data = {}
+# key = 100
+# for line in ln:
+#     Data['T'+str(key)] = line
+#     key += 100
+
 Data = {'T100': ['I1', 'I2', 'I5'],
         'T200': ['I2', 'I4'],
         'T300': ['I2', 'I3'],
@@ -143,5 +153,4 @@ Data = {'T100': ['I1', 'I2', 'I5'],
         'T900': ['I1', 'I2', 'I3']}
 
 a = Apriori(dataDic=Data)
-print
 a.do()
