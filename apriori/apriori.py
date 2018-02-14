@@ -1,11 +1,11 @@
 import sys
-
 import itertools
-
+from collections import Counter
 
 class FrequentSets:
 
     def __init__(self, raw):
+
 
         # raw list in process
         self.raw_list = raw
@@ -21,7 +21,12 @@ class FrequentSets:
 
         for dict_set in out:
             for key in dict_set:
-                print(str(key) + " (" + str(dict_set[key]) + ")")
+                if not isinstance(key,tuple):
+                    print(str(key) + " (" + str(dict_set[key]) + ")")
+                else:
+                    print(" ".join(key) + " (" + str(dict_set[key]) + ")")
+
+
 
 
 class Apriori:
@@ -67,10 +72,11 @@ class Apriori:
         # count k = 1
         for row in lines:
             for column in row:
-                if column not in unpruned_dict.keys():
-                    unpruned_dict[column] = 1
-                else:
+                if column in unpruned_dict.keys():
                     unpruned_dict[column] += 1
+                else:
+                    unpruned_dict[column] = 1
+
 
         # need to filter cand_set by prune set of keys, then count again
         # prune is set of keys to be removed from raw list
@@ -79,20 +85,12 @@ class Apriori:
 
         new_raw_list = []
 
-        # this uses set for sake of speed. This remove duplicates unfortunately, which may not work with other data sets
-        # todo: look for solution other than set subtraction
-        count = 0
-
+        # able to use set operations without duplicate removal thanks to Counter()!
         for line in lines:
-            # print("ocrapnoodles" + str(count) + " " + str(len(line)))
-            new_raw_list.append(set(line)-set(prune_set))
-            count += 1
-            # line = [x for x in line if x not in prune_set]
-            # new_raw_list.append(line)
+            new_raw_list.append(Counter(line) & Counter(prune_set))
         # update object
-
         frequent_sets.add_dict(pruned_dict)
-        frequent_sets.raw_list = new_raw_list
+        frequent_sets.raw_list = new_raw_list[:]
 
         self.apriori(frequent_sets)
 
@@ -103,54 +101,56 @@ class Apriori:
 
         raw = frequent_sets.raw_list
 
-        for x in raw:
-            print(x)
-
         k = 2
 
-        while k < 3:
+        while k < 6:
             perm_dict = {}
 
+            print("debugflag1")
             for row in raw:
+
+
                 perms = list(itertools.combinations(row, k))
+
+
+                # maybe optimize this? like after 1000 sweeps, stop checking
                 for item in perms:
-                    if item not in perm_dict.keys():
-                        perm_dict[item] = 1
-                    else:
+                    if item in perm_dict.keys():
                         perm_dict[item] += 1
+                    else:
+                        perm_dict[item] = 1
+            print("debugflag2")
 
             pruned_dict, prune_set = self.prune(perm_dict)
 
             new_raw_list = []
-
-            count = 0
             for line in raw:
-                # print("ocrapnoodles" + str(count))
-                new_raw_list.append(set(line) - set(prune_set))
-                count += 1
+                new_raw_list.append(Counter(line) & Counter(prune_set))
+
 
             # update object
             frequent_sets.add_dict(pruned_dict)
-            frequent_sets.raw_list = new_raw_list
+            frequent_sets.raw_list = new_raw_list[:]
             k += 1
 
+        print("Formatting Output")
         # for line in curr_list:
 
     def prune(self, cands):
 
         prune = []
+        temp = cands.copy()
 
         count = 0
-        print("hey!"+str(len(cands)))
         for key in cands:
-            if cands[key] < self.min_sup:
+            if cands[key] >= self.min_sup:
                 prune.append(key)
-                count += 1
-        for key in prune:
-            cands.pop(key)
+            else:
+                temp.pop(key)
+            count += 1
 
         # returning frequent sets dictionary and prune set. prune set to clean raw list
-        return cands, prune
+        return temp, prune
 
     def write_output(self, result, write):
         print("Need to implement write to file")
@@ -182,7 +182,7 @@ def test(inp, sup, out):
 if __name__ == "__main__":
     # check correct length args
     if len(sys.argv) == 1:
-        print("test output")
+        print("Processing Input: 12 Minutes for 10000 line dataset")
         test("T10I4D100K.dat", 500, "output.dat")
     elif len(sys.argv[1:]) == 3:
         run()
