@@ -2,10 +2,10 @@ import sys
 import itertools
 from collections import Counter
 
+
 class FrequentSets:
 
     def __init__(self, raw):
-
 
         # raw list in process
         self.raw_list = raw
@@ -21,12 +21,12 @@ class FrequentSets:
 
         for dict_set in out:
             for key in dict_set:
-                if not isinstance(key,tuple):
+                if not isinstance(key, tuple):
                     print(str(key) + " (" + str(dict_set[key]) + ")")
                 else:
-                    print(" ".join(key) + " (" + str(dict_set[key]) + ")")
+                    print(str(key) + " (" + str(dict_set[key]) + ")")
 
-
+                    # print(" ".join(key) + " (" + str(dict_set[key]) + ")")
 
 
 class Apriori:
@@ -77,7 +77,6 @@ class Apriori:
                 else:
                     unpruned_dict[column] = 1
 
-
         # need to filter cand_set by prune set of keys, then count again
         # prune is set of keys to be removed from raw list
 
@@ -92,6 +91,32 @@ class Apriori:
         frequent_sets.add_dict(pruned_dict)
         frequent_sets.raw_list = new_raw_list[:]
 
+
+        # k = 2
+        perm_dict = {}
+        raw_list = []
+
+        raw = frequent_sets.raw_list
+        for row in raw:
+            perms = list(itertools.combinations(row, 2))
+            raw_list.append(perms)
+
+            # maybe optimize this? like after 1000 sweeps, stop checking
+            for item in perms:
+                if item in perm_dict.keys():
+                    perm_dict[item] += 1
+                else:
+                    perm_dict[item] = 1
+
+        pruned_dicts, prune_set = self.prune(perm_dict)
+
+        new_raw_list = []
+        for line in raw_list:
+            new_raw_list.append(Counter(line) & Counter(prune_set))
+        # update object
+        frequent_sets.add_dict(pruned_dicts)
+        frequent_sets.raw_list = new_raw_list[:]
+
         self.apriori(frequent_sets)
 
         # return object
@@ -99,27 +124,24 @@ class Apriori:
 
     def apriori(self, frequent_sets):
 
-        raw = frequent_sets.raw_list
 
-        k = 2
+
+        k = 3
 
         while k < 6:
+            new_raw = []
             perm_dict = {}
-
-            print("debugflag1")
+            raw = frequent_sets.raw_list
             for row in raw:
-
-
+                row = Counter(itertools.chain(*row))
                 perms = list(itertools.combinations(row, k))
-
-
+                new_raw.append(perms)
                 # maybe optimize this? like after 1000 sweeps, stop checking
                 for item in perms:
                     if item in perm_dict.keys():
                         perm_dict[item] += 1
                     else:
                         perm_dict[item] = 1
-            print("debugflag2")
 
             pruned_dict, prune_set = self.prune(perm_dict)
 
@@ -127,10 +149,10 @@ class Apriori:
             for line in raw:
                 new_raw_list.append(Counter(line) & Counter(prune_set))
 
-
             # update object
+
             frequent_sets.add_dict(pruned_dict)
-            frequent_sets.raw_list = new_raw_list[:]
+            frequent_sets.raw_list = new_raw
             k += 1
 
         print("Formatting Output")
@@ -141,13 +163,13 @@ class Apriori:
         prune = []
         temp = cands.copy()
 
-        count = 0
         for key in cands:
-            if cands[key] >= self.min_sup:
+            if cands[key] > self.min_sup:
                 prune.append(key)
             else:
                 temp.pop(key)
-            count += 1
+
+        print(prune)
 
         # returning frequent sets dictionary and prune set. prune set to clean raw list
         return temp, prune
