@@ -37,13 +37,7 @@ class Apriori:
 
         # Object to store len-k frequent sets.
 
-        lines = [
-            [1, 2, 3, 4, 5, 6],
-            [7, 2, 3, 4, 5, 6],
-            [1, 8, 4, 5],
-            [1, 9, 0, 4, 6],
-            [0, 2, 2, 4, 5],
-        ]
+
 
         self.frequent_sets = FrequentSets(lines)
 
@@ -51,11 +45,7 @@ class Apriori:
 
         frequent_sets = self.frequent_sets
 
-        data = open(read)
-        lines = []
 
-        for line in data:
-            lines += [line.split()]
 
         # raw list from frequent sets object
         # lines = frequent_sets.raw_list
