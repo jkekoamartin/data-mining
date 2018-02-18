@@ -182,7 +182,6 @@ class Apriori:
 def run():
     # get args
     input, support, output = sys.argv[1:]
-
     # init Apriori
     apriori = Apriori(input, output, support)
     # gen results
@@ -190,7 +189,7 @@ def run():
     # write results to file
     apriori.write_output()
 
-    print("Complete. Results written to " + output)
+    print("Complete. Results written to " + "'" + output + "'")
 
 
 def test(inp, sup, out):
@@ -204,14 +203,16 @@ def test(inp, sup, out):
     apriori.gen_cands()
     # print results
     apriori.frequent_sets.to_string()
+    # write results
+    apriori.write_output()
     print("Complete. Results written to " + "'" + output + "'")
 
 
 if __name__ == "__main__":
     # check correct length args
     if len(sys.argv) == 1:
-        print("No arguments passed, running test mode")
-        test("T10I4D100K.dat", 500, "output.dat")
+        print("No arguments passed, running test mode. Test args: [T10I4D100K.dat 500 output500.dat]")
+        test("T10I4D100K.dat", 500, "output500.dat")
     elif len(sys.argv[1:]) == 3:
         print("Generating results")
         run()
