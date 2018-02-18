@@ -36,7 +36,7 @@ class Apriori:
 
         self.read = read
         self.write = write
-        self.min_sup = min_sup
+        self.min_sup = int(min_sup)
 
         data = open(read)
         unpruned_list = []
@@ -72,6 +72,7 @@ class Apriori:
 
         for row in unpruned_list:
             for column in row:
+                column = (column,)
                 if column in unpruned_dict.keys():
                     unpruned_dict[column] += 1
                 else:
@@ -80,15 +81,9 @@ class Apriori:
 
         prune_set = self.prune(unpruned_dict)
 
-        new_raw_list = []
-
         # able to use set operations without duplicate removal thanks to Counter()!
 
-        for line in unpruned_list:
-            new_raw_list.append(Counter(line) & prune_set)
-
-        # update object
-        frequent_sets.raw_list = new_raw_list
+        self.prune_list(prune_set, unpruned_list)
 
     def gen_k_2(self):
 
@@ -97,7 +92,7 @@ class Apriori:
         perm_dict = {}
         raw_list = []
 
-        unpruned_list = frequent_sets.raw_list
+        unpruned_list = frequent_sets.raw_list[:]
         for row in unpruned_list:
             perms = list(itertools.combinations(row, 2))
             raw_list.append(perms)
@@ -110,12 +105,7 @@ class Apriori:
 
         prune_set = self.prune(perm_dict)
 
-        new_raw_list = []
-        for line in raw_list:
-            new_raw_list.append(Counter(line) & prune_set)
-
-        # update object
-        frequent_sets.raw_list = new_raw_list
+        self.prune_list(prune_set, raw_list)
 
     def gen_k_nth(self):
 
@@ -124,17 +114,18 @@ class Apriori:
         empty = False
         k = 3
 
-        while not empty:
+        while k < 6:
             new_raw = []
             perm_dict = {}
             raw_list = frequent_sets.raw_list
 
             for row in raw_list:
-                # chains tuples together, like self-joining sets, but allows for duplicates,
+                # print(Counter(row))
+                # chains tuples together, like self-joining sets, worked well in tests
                 row = Counter(itertools.chain(*row))
+                row = sorted(list(row))
                 perms = list(itertools.combinations(row, k))
                 new_raw.append(perms)
-
                 for item in perms:
                     if item in perm_dict.keys():
                         perm_dict[item] += 1
@@ -143,12 +134,7 @@ class Apriori:
 
             prune_set = self.prune(perm_dict)
 
-            new_raw_list = []
-            for line in raw_list:
-                new_raw_list.append(Counter(line) & prune_set)
-
-            # update object
-            frequent_sets.raw_list = new_raw
+            self.prune_list(prune_set, new_raw)
 
             if not prune_set:
                 empty = True
@@ -163,19 +149,44 @@ class Apriori:
         pruned_dict = unpruned_dict.copy()
 
         for key in unpruned_dict:
+            # todo: make dynamic after testing
             if unpruned_dict[key] < self.min_sup:
                 pruned_dict.pop(key)
-            else:
                 prune.append(key)
+
 
         # add dictionary to frequent_sets object
         self.frequent_sets.add_dict(pruned_dict)
 
         # returning prune set. prune set to clean raw list
-        return Counter(prune)
+        return set(prune)
 
     def write_output(self):
-        print("Need to implement write to file")
+
+        out = self.write
+
+        out = open(out, 'w')
+
+        output = self.frequent_sets.k_sets_list
+
+        for dict_set in output:
+            for key in dict_set:
+                if isinstance(key, tuple):
+                    out.write(" ".join(map(str, list(key))) + " (" + str(dict_set[key]) + ")\n")
+                else:
+                    out.write(str(key) + " (" + str(dict_set[key]) + ")\n")
+
+        out.close()
+
+    def prune_list(self, prune_set, raw_list):
+        new_raw_list = []
+
+        for line in raw_list:
+            t = [x for x in line if x not in prune_set]
+            if t:
+                new_raw_list.append(t)
+
+        self.frequent_sets.raw_list = new_raw_list
 
 
 def run():

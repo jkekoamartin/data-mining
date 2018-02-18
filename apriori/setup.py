@@ -1,6 +1,4 @@
 from distutils.core import setup
-from Cython.Build import cythonize
+import py2exe
 
-setup(
-    ext_modules=cythonize("aprioriC.pyx")
-)
+setup(console=['hello.py'])
