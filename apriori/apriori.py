@@ -72,7 +72,6 @@ class Apriori:
 
         for row in unpruned_list:
             for column in row:
-                column = (column,)
                 if column in unpruned_dict.keys():
                     unpruned_dict[column] += 1
                 else:
@@ -123,6 +122,7 @@ class Apriori:
                 # print(Counter(row))
                 # chains tuples together, like self-joining sets, worked well in tests
                 row = Counter(itertools.chain(*row))
+                # sort, or a few tuples will get confused by the counter
                 row = sorted(list(row))
                 perms = list(itertools.combinations(row, k))
                 new_raw.append(perms)
