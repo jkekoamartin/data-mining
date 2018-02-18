@@ -44,14 +44,6 @@ class Apriori:
         for line in data:
             unpruned_list += [line.split()]
 
-        # unpruned_list = [
-        #     [1, 2, 3, 4, 5, 6],
-        #     [7, 2, 3, 4, 5, 6],
-        #     [1, 8, 4, 5],
-        #     [1, 9, 0, 4, 6],
-        #     [0, 2, 2, 4, 5],
-        # ]
-
         # Object to store len-k frequent sets.
         self.frequent_sets = FrequentSets(unpruned_list)
 
@@ -113,14 +105,13 @@ class Apriori:
         empty = False
         k = 3
 
-        while k < 6:
+        while not empty:
             new_raw = []
             perm_dict = {}
             raw_list = frequent_sets.raw_list
 
             for row in raw_list:
-                # print(Counter(row))
-                # chains tuples together, like self-joining sets, worked well in tests
+                # chains tuples together, like self-joining sets
                 row = Counter(itertools.chain(*row))
                 # sort, or a few tuples will get confused by the counter
                 row = sorted(list(row))
@@ -149,11 +140,10 @@ class Apriori:
         pruned_dict = unpruned_dict.copy()
 
         for key in unpruned_dict:
-            # todo: make dynamic after testing
-            if unpruned_dict[key] < self.min_sup:
-                pruned_dict.pop(key)
+            if unpruned_dict[key] >= self.min_sup:
                 prune.append(key)
-
+            else:
+                pruned_dict.pop(key)
 
         # add dictionary to frequent_sets object
         self.frequent_sets.add_dict(pruned_dict)
@@ -182,9 +172,9 @@ class Apriori:
         new_raw_list = []
 
         for line in raw_list:
-            t = [x for x in line if x not in prune_set]
-            if t:
-                new_raw_list.append(t)
+            new_line = [x for x in line if x in prune_set]
+            if new_line:
+                new_raw_list.append(new_line)
 
         self.frequent_sets.raw_list = new_raw_list
 
