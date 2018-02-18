@@ -6,6 +6,8 @@ import timeit
 start = timeit.default_timer()
 
 
+# Code written by James Martin 2/17/2018
+
 class FrequentSets:
 
     def __init__(self, raw):
