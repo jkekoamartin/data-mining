@@ -47,8 +47,9 @@ class Apriori:
         # Object to store len-k frequent sets.
         self.frequent_sets = FrequentSets(unpruned_list)
 
-    def gen_cands(self):
+    def gen_k_sets(self):
 
+        # generate each k itemset
         self.gen_k_1()
         self.gen_k_2()
         self.gen_k_nth()
@@ -64,12 +65,12 @@ class Apriori:
 
         for row in unpruned_list:
             for column in row:
-                if column in unpruned_dict.keys():
+                if column in unpruned_dict:
                     unpruned_dict[column] += 1
                 else:
                     unpruned_dict[column] = 1
-        # prune is set of keys to be kept in raw list
 
+        # prune is set of keys to be kept in raw list
         prune_set = self.prune(unpruned_dict)
 
         # able to use set operations without duplicate removal thanks to Counter()!
@@ -89,7 +90,7 @@ class Apriori:
             raw_list.append(perms)
 
             for item in perms:
-                if item in perm_dict.keys():
+                if item in perm_dict:
                     perm_dict[item] += 1
                 else:
                     perm_dict[item] = 1
@@ -117,8 +118,9 @@ class Apriori:
                 row = sorted(list(row))
                 perms = list(itertools.combinations(row, k))
                 new_raw.append(perms)
+
                 for item in perms:
-                    if item in perm_dict.keys():
+                    if item in perm_dict:
                         perm_dict[item] += 1
                     else:
                         perm_dict[item] = 1
@@ -151,6 +153,17 @@ class Apriori:
         # returning prune set. prune set to clean raw list
         return set(prune)
 
+    def prune_list(self, prune_set, raw_list):
+
+        new_raw_list = []
+
+        for line in raw_list:
+            new_line = [x for x in line if x in prune_set]
+            if new_line:
+                new_raw_list.append(new_line)
+
+        self.frequent_sets.raw_list = new_raw_list
+
     def write_output(self):
 
         out = self.write
@@ -168,16 +181,6 @@ class Apriori:
 
         out.close()
 
-    def prune_list(self, prune_set, raw_list):
-        new_raw_list = []
-
-        for line in raw_list:
-            new_line = [x for x in line if x in prune_set]
-            if new_line:
-                new_raw_list.append(new_line)
-
-        self.frequent_sets.raw_list = new_raw_list
-
 
 def run():
     # get args
@@ -185,7 +188,7 @@ def run():
     # init Apriori
     apriori = Apriori(input, output, support)
     # gen results
-    apriori.gen_cands()
+    apriori.gen_k_sets()
     # write results to file
     apriori.write_output()
 
@@ -200,7 +203,7 @@ def test(inp, sup, out):
     # init Apriori
     apriori = Apriori(input, output, support)
     # gen results
-    apriori.gen_cands()
+    apriori.gen_k_sets()
     # print results
     apriori.frequent_sets.to_string()
     # write results
