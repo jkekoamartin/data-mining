@@ -81,6 +81,7 @@ class Apriori:
         self.prune_list(prune_set, unpruned_list)
 
     def gen_k_2(self):
+
         frequent_sets = self.frequent_sets
 
         perm_dict = {}
@@ -112,7 +113,6 @@ class Apriori:
             new_raw = []
             perm_dict = {}
             raw_list = frequent_sets.raw_list
-            print("hey")
 
             for row in raw_list:
                 # chains tuples together, like self-joining sets
@@ -218,7 +218,7 @@ if __name__ == "__main__":
     # check correct length args
     if len(sys.argv) == 1:
         print("No arguments passed, running test mode. Test args: [T10I4D100K.dat 500 output500.dat]")
-        test("T10I4D100K.dat", 3000, "output500.dat")
+        test("T10I4D100K.dat", 500, "output500.dat")
     elif len(sys.argv[1:]) == 3:
         print("Generating results")
         run()
