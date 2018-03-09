@@ -1,228 +1,225 @@
 import sys
+import numpy
 import itertools
 from collections import Counter
-import timeit
+import pandas as pd
+import math
 
+import timeit
 
 start = timeit.default_timer()
 
 
-# Code written by James Martin 2/17/2018
+# Code written by James Martin
 
-class FrequentSets:
+class Bayes_Classifier:
 
-    def __init__(self, raw):
+    def __init__(self, train_set, test_set, output):
+        # un-partitioned training data
+        self.train_set = train_set
+        # test data
+        self.test_set = test_set
+        # output file
+        self.output = output
 
-        # raw list in process
-        self.raw_list = raw
+        # attributes are df[1:] attributes mapped to set of unique attribute columns
+        self.attributes = {}
 
-        # results, stored as list of dictionaries of k-len sets
-        self.k_sets_list = []
+        # contains class labels in a list
+        self.classifiers = []
 
-    def add_dict(self, frequent_set):
-        self.k_sets_list.append(frequent_set)
+        # note that test and training data contains class labels for accuracy testing
+        self.train_df = pd.read_csv(self.train_set, header=None, delimiter=r"\s+")
+        self.test_df = pd.read_csv(self.test_set, header=None, delimiter=r"\s+")
 
-    def to_string(self):
-        out = self.k_sets_list
+    def preprocess(self):
+        # get attributes from training data, assign label
+        # get length of row - 1
+        # give name to each attribute [a1,a2,...,a<n>]
+        # assign to attributes
+        # print(len(self.train[:]))
+        train_df = self.train_df
+        attributes = self.attributes
 
-        for dict_set in out:
-            for key in dict_set:
-                if isinstance(key, tuple):
-                    print(" ".join(map(str, list(key))) + " (" + str(dict_set[key]) + ")")
-                else:
-                    print(str(key) + " (" + str(dict_set[key]) + ")")
+        # for each column of train, get unique attribute values and store in dict with index as the key
+        for column in train_df:
+            unique_values = set(train_df[column])
+            attributes[column] = unique_values
+
+        # pop 0 from dict, which contains classifiers
+        self.classifiers = list(attributes.pop(0))
+
+    def learn(self):
+        cand_attributes = self.attributes
+
+        # get class probabilities
+        class_probabilities = {}
+
+        class_count_dict = dict(self.train_df[0].value_counts())
+
+        total_size = sum(class_count_dict.values())
+
+        for c_label in class_count_dict:
+            class_probabilities[c_label] = class_count_dict[c_label] / total_size
 
 
-class Apriori:
+        partitions = get_partitions(cand_attributes, self.train_df)
 
-    def __init__(self, read, write, min_sup):
+        pass
 
-        self.read = read
-        self.write = write
-        self.min_sup = int(min_sup)
+    def classify(self):
+        pass
 
-        data = open(read)
-        unpruned_list = []
+    def get_accuracy(self):
+        pass
 
-        for line in data:
-            unpruned_list += [line.split()]
 
-        # Object to store len-k frequent sets.
-        self.frequent_sets = FrequentSets(unpruned_list)
+def get_partitions(cand_values, partition):
+    # this return the partitions from splitting on atrribute values, used to calc info gain
 
-    def gen_k_sets(self):
+    for attribute_list in trainin_set_attributes:
+        attr_dict = {}
+        for attribute in attribute_list:
+            attr_dict[attribute] = calculate_general_probability(attribute, column, training_set)
+        dictionary[column] = attr_dict
+        column += 1
 
-        # generate each k itemset
-        self.gen_k_1()
-        self.gen_k_2()
-        self.gen_k_nth()
+    partitions = []
 
-    def gen_k_1(self):
+    temp = []
+    nump_array = partition.as_matrix()
 
-        frequent_sets = self.frequent_sets
+    for cand in cand_values:
+        cand_dict = {}
 
-        # raw list from frequent sets object
-        unpruned_list = frequent_sets.raw_list
+        # for each attribute value, store probability in dict,
+        for value in cand_values:
+            cand_dict[value] =
+            for row in nump_array:
+                if row[cand] is value:
+                    temp.append(row)
 
-        unpruned_dict = {}
 
-        for row in unpruned_list:
-            for column in row:
-                if column in unpruned_dict:
-                    unpruned_dict[column] += 1
-                else:
-                    unpruned_dict[column] = 1
+            partitions[value] = pd.DataFrame(temp)
+            temp.clear()
 
-        # prune is set of keys to be kept in raw list
-        prune_set = self.prune(unpruned_dict)
+    # return dictionary of attribute values mapped to partition that value split
+    return partitions
 
-        # able to use set operations without duplicate removal thanks to Counter()!
 
-        self.prune_list(prune_set, unpruned_list)
+def best_gain(root, cand_attributes):
+    # returns available attribute with best info gain
+    entropy = 0
 
-    def gen_k_2(self):
+    class_count_dict = dict(root.partition[0].value_counts())
+    print(class_count_dict)
+    total_size = sum(class_count_dict.values())
+    # candidates = {}
+    class_size = {}
 
-        frequent_sets = self.frequent_sets
+    # cast to dict, to wrangle with pandas dataframe
 
-        perm_dict = {}
-        raw_list = []
+    for c_label in class_count_dict:
+        class_size[c_label] = (class_count_dict[c_label] / total_size)
 
-        unpruned_list = frequent_sets.raw_list[:]
-        for row in unpruned_list:
-            perms = list(itertools.combinations(row, 2))
-            raw_list.append(perms)
+    # get entropy for class labels
+    for count in class_size:
+        entropy -= class_size[count] * math.log(class_size[count], 2)
 
-            for item in perms:
-                if item in perm_dict:
-                    perm_dict[item] += 1
-                else:
-                    perm_dict[item] = 1
+    # cand_att is a dict, for each attribute, calculate info gain on partition, return best one
 
-        prune_set = self.prune(perm_dict)
+    # [attribute, dictionary of it's resulting partition, it's info gain]
+    candidate_container = [0, dict(), 0]
 
-        self.prune_list(prune_set, raw_list)
+    for attribute in cand_attributes:
+        # this has the x,y,z partition index by x,y,z
+        partitions = get_partitions(attribute, cand_attributes[attribute], root.partition)
 
-    def gen_k_nth(self):
+        # 0 mean that partitions perfectly classify
+        part_entropy = 0
+        # for each partition calculate entropy then normalize, add to, remember, this traverses a dict
+        for part in partitions:
 
-        frequent_sets = self.frequent_sets
+            class_entropy = 0
 
-        empty = False
-        k = 3
+            att_count_dict = dict(partitions[part][attribute].value_counts())
+            part_total_size = sum(att_count_dict.values())
+            part_class_dict = dict(partitions[part][0].value_counts())
+            part_class_size = {}
 
-        while not empty:
-            new_raw = []
-            perm_dict = {}
-            raw_list = frequent_sets.raw_list
+            # cast to dict, to wrangle with pandas dataframe
 
-            for row in raw_list:
-                # chains tuples together, like self-joining sets
-                row = Counter(itertools.chain(*row))
-                # sort, or a few tuples will get confused by the counter
-                row = sorted(list(row))
-                perms = list(itertools.combinations(row, k))
-                new_raw.append(perms)
+            # store normalized probability
+            part_ratio = (part_total_size / total_size)
 
-                for item in perms:
-                    if item in perm_dict:
-                        perm_dict[item] += 1
-                    else:
-                        perm_dict[item] = 1
+            for c_label in part_class_dict:
+                part_class_size[c_label] = (part_class_dict[c_label] / part_total_size)
 
-            prune_set = self.prune(perm_dict)
+            for count in part_class_size:
+                class_entropy -= part_class_size[count] * math.log(part_class_size[count], 2)
 
-            self.prune_list(prune_set, new_raw)
+            part_entropy += part_ratio * class_entropy
+            # get entropy for class labels
 
-            if not prune_set:
-                empty = True
-            # update loop vars
-            k += 1
+        info_gain = entropy - part_entropy
+        if info_gain > candidate_container[2]:
+            candidate_container = [attribute, partitions, info_gain]
 
-        print("Formatting Output")
+    cand_attributes.pop(candidate_container[0])
+    # trim info gain off, was only neccesary for getting max
+    return candidate_container[:2]
 
-    def prune(self, unpruned_dict):
 
-        prune = []
-        pruned_dict = unpruned_dict.copy()
-
-        for key in unpruned_dict:
-            if unpruned_dict[key] >= self.min_sup:
-                prune.append(key)
-            else:
-                pruned_dict.pop(key)
-
-        # add dictionary to frequent_sets object
-        self.frequent_sets.add_dict(pruned_dict)
-
-        # returning prune set. prune set to clean raw list
-        return set(prune)
-
-    def prune_list(self, prune_set, raw_list):
-
-        new_raw_list = []
-
-        for line in raw_list:
-            new_line = [x for x in line if x in prune_set]
-            if new_line:
-                new_raw_list.append(new_line)
-
-        self.frequent_sets.raw_list = new_raw_list
-
-    def write_output(self):
-
-        out = self.write
-
-        out = open(out, 'w')
-
-        output = self.frequent_sets.k_sets_list
-
-        for dict_set in output:
-            for key in dict_set:
-                if isinstance(key, tuple):
-                    out.write(" ".join(map(str, list(key))) + " (" + str(dict_set[key]) + ")\n")
-                else:
-                    out.write(str(key) + " (" + str(dict_set[key]) + ")\n")
-
-        out.close()
-
+# todo: fix
+# def print_tree(node):
+#     if node.is_leaf_node:
+#         classification = node.classification
+#         print('Found a leaf! This leaf is predicted to be: ' + classification)
+#         return
+#     elif node.parent is None:
+#         print('This is the root node. splitting on ' + str(node.attribute_split_column))
+#         print("\n")
+#         index = 0
+#         for character in node.attribute_split_character_list:
+#             print('Traversing to ' + character)
+#             print_tree(node.children[index])
+#             index += 1
+#     elif node.parent is not None:
+#         print('This node in the tree will split on ' + str(node.attribute_split_column))
+#         index = 0
+#         for character in node.attribute_split_character_list:
+#             print('Traversing to ' + character)
+#             print_tree(node.children[index])
+#             index += 1
 
 def run():
     # get args
     input, support, output = sys.argv[1:]
-    # init Apriori
-    apriori = Apriori(input, output, support)
-    # gen results
-    apriori.gen_k_sets()
-    # write results to file
-    apriori.write_output()
 
     print("Complete. Results written to " + "'" + output + "'")
 
 
-def test(inp, sup, out):
-    input = inp
-    support = sup
-    output = out
+def test(train_set, test_set, out):
+    bayes = Bayes_Classifier(train_set, test_set, out)
 
-    # init Apriori
-    apriori = Apriori(input, output, support)
-    # gen results
-    apriori.gen_k_sets()
-    # print results
-    apriori.frequent_sets.to_string()
-    # write results
-    apriori.write_output()
-    print("Complete. Results written to " + "'" + output + "'")
+    bayes.preprocess()
+    bayes.learn()
+
+    # c_45.entropy()
+    # c_45.classify()
+    # c_45.get_accuracy()
+
+    print("Complete. Results written to " + "'" + out + "'")
 
 
 if __name__ == "__main__":
     # check correct length args
     if len(sys.argv) == 1:
-        print("No arguments passed, running test mode. Test args: [T10I4D100K.dat 500 output500.dat]")
-        test("T10I4D100K.dat", 500, "output500.dat")
+        print("No arguments passed, running test mode. Test args: [mushroom.training training.test outputc45.dat]")
+        test("mushroom.training", "mushroom.test", "outputBayes.dat")
     elif len(sys.argv[1:]) == 3:
         print("Generating results")
         run()
-
     else:
         print("Invalid number of arguments passed. Please input: [Readfile MinimumSupport OutputFile]")
 
