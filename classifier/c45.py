@@ -21,29 +21,21 @@ class DecisionTree:
 class C45_Node:
     def __init__(self,
                  parent=None,
-                 attribute_name=None,
+                 split_attribute=None,
                  classification=None,
                  attribute_value=None,
                  terminal=False,
-                 split_value=None,
                  partition=None):
-        # self.attribute_split_index = attribute_split_index
-        self.split_value = split_value
-        self.partition = partition
-        self.attribute_name = attribute_name
 
         self.parent = parent
+        self.split_attribute = split_attribute
+        self.classification = classification
+        self.attribute_value = attribute_value
+        self.terminal = terminal
+        self.partition = partition
 
         # the list of Nodes with attribute values that correspond to the Nodes attribute name
         self.children = []
-
-        self.classification = classification
-
-        # this is the attribute value that link the node to the parent
-        self.attribute_value = attribute_value
-
-        # flag for if terminal, should have a classification if terminal
-        self.terminal = terminal
 
     def add_child(self, child):
         child.parent = self
@@ -90,17 +82,26 @@ class C45_Classifier:
     def learn(self):
         root = self.learn_aux()
 
-        print(root)
+        print_tree(root)
+        # stack = []
+        #
+        # stack.append(root)
+        #
+        # while stack:
+        #
+        #     node = stack.pop()
+        #     print(node.classification)
+        #     for child in node.children:
+        #         stack.append(child)
 
     # first call default None
-    def learn_aux(self, root=None):
+    def learn_aux(self, node=None):
 
         # if first call, use full dataset
-        if root is None:
-            node = C45_Node(None, None, None, None, False, None, self.train_df)
+        if node is None:
+            node = C45_Node(None, None, None, None, False, self.train_df)
         # new node
-        else:
-            node = C45_Node(root, None, None, None, False, None, self.train_df)
+
         # check base cases
         class_counts = dict(node.partition[0].value_counts())
 
@@ -115,9 +116,7 @@ class C45_Classifier:
         # find attribute split, assign. get partitions, this also remove attribute from list
         node.split_value, partitions = best_gain(node, self.attributes)
 
-
         # remove from list
-        print(node.split_value)
 
         if node.split_value == 0:
             best_at, best_val = max(class_counts.items(), key=lambda k: k[1])
@@ -129,12 +128,12 @@ class C45_Classifier:
 
         for part in partitions:
             if partitions[part].empty:
-                class_counts = dict(root.partition[0].value_counts())
+                class_counts = dict(node.partition[0].value_counts())
                 best_at, best_val = max(class_counts.items(), key=lambda k: k[1])
-                leaf = C45_Node(node, node.split_value, best_at, part, True, None, partitions[part])
+                leaf = C45_Node(node, node.split_value, best_at, part, True, partitions[part])
                 node.children.append(leaf)
             else:
-                temp_node = C45_Node(node, node.split_value, None, part, False, None, partitions[part])
+                temp_node = C45_Node(node, node.split_value, None, part, False, partitions[part])
                 new_node = self.learn_aux(temp_node)
                 node.children.append(new_node)
 
@@ -173,7 +172,6 @@ def best_gain(root, cand_attributes):
     for attribute in cand_attributes:
         # this has the x,y,z partition index by x,y,z
         partitions = get_partitions(attribute, cand_attributes[attribute], root.partition)
-
         # 0 mean that partitions perfectly classify
         part_entropy = 0
         # for each partition calculate entropy then normalize, add to, remember, this traverses a dict
@@ -181,22 +179,25 @@ def best_gain(root, cand_attributes):
 
             class_entropy = 0
 
-            att_count_dict = dict(partitions[part][attribute].value_counts())
-            part_total_size = sum(att_count_dict.values())
-            part_class_dict = dict(partitions[part][0].value_counts())
-            part_class_size = {}
+            if dict(partitions[part]):
 
-            # cast to dict, to wrangle with pandas dataframe
+                att_count_dict = dict(partitions[part][attribute].value_counts())
+                part_total_size = sum(att_count_dict.values())
+                part_class_dict = dict(partitions[part][0].value_counts())
+                part_class_size = {}
 
-            # store normalized probability
-            part_ratio = (part_total_size / total_size)
+                # cast to dict, to wrangle with pandas dataframe
 
-            for c_label in part_class_dict:
-                part_class_size[c_label] = (part_class_dict[c_label] / part_total_size)
+                # store normalized probability
+                part_ratio = (part_total_size / total_size)
 
-            for count in part_class_size:
-                class_entropy -= part_class_size[count] * math.log(part_class_size[count], 2)
+                for c_label in part_class_dict:
+                    part_class_size[c_label] = (part_class_dict[c_label] / part_total_size)
 
+                for count in part_class_size:
+                    class_entropy -= part_class_size[count] * math.log(part_class_size[count], 2)
+            else:
+                part_ratio = 0
             part_entropy += part_ratio * class_entropy
             # get entropy for class labels
 
@@ -227,27 +228,23 @@ def get_partitions(cand, cand_values, partition):
     return partitions
 
 
-# todo: fix
-# def print_tree(node):
-#     if node.is_leaf_node:
-#         classification = node.classification
-#         print('Found a leaf! This leaf is predicted to be: ' + classification)
-#         return
-#     elif node.parent is None:
-#         print('This is the root node. splitting on ' + str(node.attribute_split_column))
-#         print("\n")
-#         index = 0
-#         for character in node.attribute_split_character_list:
-#             print('Traversing to ' + character)
-#             print_tree(node.children[index])
-#             index += 1
-#     elif node.parent is not None:
-#         print('This node in the tree will split on ' + str(node.attribute_split_column))
-#         index = 0
-#         for character in node.attribute_split_character_list:
-#             print('Traversing to ' + character)
-#             print_tree(node.children[index])
-#             index += 1
+def print_tree(node):
+    if node.terminal:
+        classification = node.classification
+        print('Found a leaf! This leaf is predicted to be: ' + classification)
+        return
+    elif node.parent is None:
+        print('This is the root node. splitting on ' + str(node.split_attribute))
+        print("\n")
+        for child in node.children:
+            print('Traversing to ' + child.attribute_value)
+            print_tree(child)
+    elif node.parent is not None:
+        print('This node in the tree will split on ' + str(node.split_attribute))
+        for child in node.children:
+            print('Traversing to ' + child.attribute_value)
+            print_tree(child)
+
 
 def run():
     # get args
