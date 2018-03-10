@@ -32,6 +32,12 @@ class Bayes_Classifier:
         self.test_results = []
         self.accuracy = 0.0
 
+        self.normalizers = []
+
+        self.attribute_probs = []
+
+        self.size = 0
+
         # note that test and training data contains class labels for accuracy testing
         self.train_df = pd.read_csv(self.train_set, header=None, delimiter=r"\s+")
         self.test_df = pd.read_csv(self.test_set, header=None, delimiter=r"\s+")
@@ -64,28 +70,37 @@ class Bayes_Classifier:
 
         # total size of data
         total_size = sum(class_count_dict.values())
+        self.size = total_size
 
         for c_label in class_count_dict:
             class_probabilities[c_label] = class_count_dict[c_label] / total_size
 
-        data = []
+        # per class label
+        attribute_probs = get_probability(attributes_dict, self.train_df, total_size, self.classifiers)
 
-        partitions = get_partitions(attributes_dict, self.train_df)
+        # per attribute
+        normalizers = get_attribute_dict(attributes_dict, self.train_df, total_size)
 
+        self.attribute_probs = attribute_probs
+        self.normalizers = normalizers
+
+    def classify(self):
         test_data = self.test_df
+
+        normalizers = self.normalizers
+        attribute_probs = self.attribute_probs
 
         nump_arr = test_data.as_matrix()
 
+        data = []
+
         for line in nump_arr:
-            prediction = classify_tuple(line, partitions, class_probabilities, total_size)
+            prediction = classify_tuple(line, attribute_probs, normalizers, self.classifiers)
             line = list(line)
             line.append(prediction)
             data.append(line)
 
         self.test_results = data
-
-    def classify(self):
-        pass
 
     def get_accuracy(self):
 
@@ -117,57 +132,96 @@ class Bayes_Classifier:
         out.close()
 
 
-def classify_tuple(line, partitions, class_probabilities, total_size):
+def classify_tuple(line, attribute_probs, normalizers, classifiers):
     # test tuple = [x,w,q,t,c,s,a]
     # test partition unpacking
 
-    e_prob = 0
-    p_prob = 0
+    for label in classifiers:
+        print(label)
+        label_probability = 1
+        label_dict = attribute_probs[label]
+        for prob in label_dict:
+            label_dict[prob]
 
-    class_count_dict = dict(self.train_df[0].value_counts())
+
+    for norm in attribute_probs:
+        for key in norm:
+            pass
+            # print(norm[key])
 
     # skip first index -- it contains the classifier
     attribute = 1
     for column in line[1:]:
+
         pass
 
-    for part in partitions:
-        attribute_partition = partitions[part]
-        # for each value in the attribute
-        for value in attribute_partition:
-            value_partition = pd.DataFrame(attribute_partition[value])
-            # this is the total count of the attribute in it's partition
-            print(int(value_partition[part].value_counts()))
+
 
     return "p"
 
 
-def get_partitions(attribute_dict, partition):
-    # this return the partitions from splitting on atrribute values, used to calc info gain
+def probability(value, attribute, train_df, total_size, classifier):
+    prob = 0
 
-    partitions = {}
-    # to do row operations on partition
+    nump_array = train_df.as_matrix()
+
+    for row in nump_array:
+        if row[attribute] == value and row[0] == classifier:
+            prob += 1
+
+    prob = prob / total_size
+
+    return prob
+
+
+def get_probability(attributes_dict, train_df, total_size, classifiers):
+    # dicts of probability split on class labels
+    prob_class_split = {}
+
+    for classifier in classifiers:
+
+        partition_dict = {}
+
+        for attribute in attributes_dict:
+            attribute_value_dict = {}
+            attribute_value = attributes_dict[attribute]
+            for value in attribute_value:
+                attribute_value_dict[value] = probability(value, attribute, train_df, total_size, classifier)
+            #     map attribute value probabilities to attribute column
+            partition_dict[attribute] = attribute_value_dict
+        prob_class_split[classifier] = partition_dict
+
+    return prob_class_split
+
+
+def attribute_probability(value, attribute, partition, total_size):
+    prob = 0
+
     nump_array = partition.as_matrix()
 
-    # for each attribute column
-    for attribute in attribute_dict:
-        # dict for entire column
-        attribute_partition = {}
-        attribute_value = attribute_dict[attribute]
-        # for each value in attribute column
-        for value in attribute_value:
-            # make a partition of just the attribute values
-            temp_partition = []
-            for row in nump_array:
-                if str(row[attribute]) == str(value):
-                    temp_partition.append(row)
-            # this maps a attribute value to its partition
-            attribute_partition[value] = temp_partition
-        # this maps an attribute column to all of its sub partitions
-        partitions[attribute] = attribute_partition
-    # now calculate a probability for each partition?
+    for row in nump_array:
+        if row[attribute] == value:
+            prob += 1
 
-    return partitions
+    prob = prob / total_size
+
+    return prob
+
+
+def get_attribute_dict(attribute_dict, partition, total_size):
+    # this return the partitions from splitting on atrribute values, used to calc info gain
+
+    partition_dict = {}
+
+    for attribute in attribute_dict:
+        attribute_value_dict = {}
+        attribute_value = attribute_dict[attribute]
+        for value in attribute_value:
+            attribute_value_dict[value] = attribute_probability(value, attribute, partition, total_size)
+        #     map attribute value probabilities to attribute column
+        partition_dict[attribute] = attribute_value_dict
+
+    return partition_dict
 
 
 def run():
@@ -188,6 +242,7 @@ def test(train_set, test_set, out):
 
     bayes.preprocess()
     bayes.learn()
+    bayes.classify()
     bayes.get_accuracy()
     bayes.write()
 
