@@ -133,8 +133,6 @@ class Bayes_Classifier:
 
 
 def classify_tuple(line, attribute_probs, normalizers, classifiers):
-    # test tuple = [x,w,q,t,c,s,a]
-    # test partition unpacking
 
     best_prob = 0
     best_label = ""
@@ -151,6 +149,8 @@ def classify_tuple(line, attribute_probs, normalizers, classifiers):
                 normalizer *= norm_dict[value]
         if (label_probability / normalizer) > best_prob:
             best_label = label
+        else:
+            continue
 
     return best_label
 
