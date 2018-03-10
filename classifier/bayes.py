@@ -136,28 +136,23 @@ def classify_tuple(line, attribute_probs, normalizers, classifiers):
     # test tuple = [x,w,q,t,c,s,a]
     # test partition unpacking
 
+    best_prob = 0
+    best_label = ""
     for label in classifiers:
-        print(label)
+        normalizer = 1
         label_probability = 1
         label_dict = attribute_probs[label]
-        for prob in label_dict:
-            label_dict[prob]
+        for attribute in label_dict:
+            value = line[attribute]
+            value_dict = label_dict[attribute]
+            norm_dict = normalizers[attribute]
+            for each in value_dict:
+                label_probability *= value_dict[value]
+                normalizer *= norm_dict[value]
+        if (label_probability / normalizer) > best_prob:
+            best_label = label
 
-
-    for norm in attribute_probs:
-        for key in norm:
-            pass
-            # print(norm[key])
-
-    # skip first index -- it contains the classifier
-    attribute = 1
-    for column in line[1:]:
-
-        pass
-
-
-
-    return "p"
+    return best_label
 
 
 def probability(value, attribute, train_df, total_size, classifier):
