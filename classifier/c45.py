@@ -1,11 +1,8 @@
-import sys
-import numpy
-import itertools
-from collections import Counter
-import pandas as pd
 import math
-
+import sys
 import timeit
+
+import pandas as pd
 
 start = timeit.default_timer()
 
@@ -133,16 +130,15 @@ class C45_Classifier:
     def get_accuracy(self):
 
         correct = 0.0
-        classified = 0.0
+        classified = len(self.test_results)
 
         for line in self.test_results:
             if str(line[0]) is str(line[-1]):
                 correct += 1
             else:
                 continue
-            classified += 1
 
-        accuracy = correct / classified * 100
+        accuracy = (correct / classified) * 100
         self.accuracy = accuracy
 
     def write(self):
