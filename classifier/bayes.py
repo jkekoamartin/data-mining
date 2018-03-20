@@ -30,7 +30,7 @@ class Bayes_Classifier:
         self.classifiers = []
 
         self.test_results = []
-        self.accuracy = 0.0
+        self.accuracy = 0
 
         self.normalizers = []
 
@@ -104,7 +104,7 @@ class Bayes_Classifier:
 
     def get_accuracy(self):
 
-        correct = 0.0
+        correct = 0
         classified = len(self.test_results)
 
         for line in self.test_results:
@@ -133,30 +133,29 @@ class Bayes_Classifier:
 
 
 def classify_tuple(line, attribute_probs, normalizers, classifiers):
-
-    best_prob = 0
+    best_prob = float(0)
     best_label = ""
+
     for label in classifiers:
-        normalizer = 1
-        label_probability = 1
+        normalizer = 1.0
+        label_probability = 1.0
         label_dict = attribute_probs[label]
         for attribute in label_dict:
             value = line[attribute]
             value_dict = label_dict[attribute]
             norm_dict = normalizers[attribute]
             for each in value_dict:
-                label_probability *= value_dict[value]
-                normalizer *= norm_dict[value]
-        if (label_probability / normalizer) > best_prob:
+                label_probability *= float(value_dict[value])
+                normalizer *= float(norm_dict[value])
+        if (float(label_probability) / float(normalizer)) > best_prob:
             best_label = label
-        else:
-            continue
+
 
     return best_label
 
 
 def probability(value, attribute, train_df, total_size, classifier):
-    prob = 0
+    prob = 0.0
 
     nump_array = train_df.as_matrix()
 
@@ -164,7 +163,7 @@ def probability(value, attribute, train_df, total_size, classifier):
         if row[attribute] == value and row[0] == classifier:
             prob += 1
 
-    prob = prob / total_size
+    prob = (prob / float(total_size))
 
     return prob
 
@@ -190,7 +189,7 @@ def get_probability(attributes_dict, train_df, total_size, classifiers):
 
 
 def attribute_probability(value, attribute, partition, total_size):
-    prob = 0
+    prob = 0.0
 
     nump_array = partition.as_matrix()
 
@@ -198,7 +197,11 @@ def attribute_probability(value, attribute, partition, total_size):
         if row[attribute] == value:
             prob += 1
 
-    prob = prob / total_size
+    if prob == 0:
+        prob += 1
+        prob = (prob / float(total_size + 1))
+    else:
+        prob = (prob / float(total_size))
 
     return prob
 
@@ -227,6 +230,7 @@ def run():
 
     bayes.preprocess()
     bayes.learn()
+    bayes.classify()
     bayes.get_accuracy()
     bayes.write()
     print("Complete. Results written to " + "'" + output + "'")
@@ -248,7 +252,7 @@ if __name__ == "__main__":
     # check correct length args
     if len(sys.argv) == 1:
         print("No arguments passed, running test mode. Test args: [mushroom.training training.test outputc45.dat]")
-        test("mushroom.training", "mushroom.test", "outputBayes.dat")
+        test("mushroom.training", "mushroom.test", "outputbayes.dat")
     elif len(sys.argv[1:]) == 3:
         print("Generating results")
         run()
