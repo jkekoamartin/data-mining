@@ -21,8 +21,7 @@ class Centroid:
 class K_Means:
 
     def __init__(self, train_set, k, output):
-        # un-partitioned training data
-        self.train_set = train_set
+
         # test data
         self.k = k
         # output file
@@ -36,19 +35,16 @@ class K_Means:
 
         # note that test and training data contains class labels for accuracy testing
         # Data must be comma delimited
-        self.train_df = pd.read_csv(self.train_set, header=None, delimiter=r",")
+        self.train_df = pd.read_csv(train_set, header=None, delimiter=r",")
 
         # centroids for clustering
         self.centroids = []
 
+        # results of clustering
         self.cluster_results = {}
 
-        # todo: use this for SSE
-        # the results of classifying the test set
-        self.SSE = 0.0
-
     def pre_process(self):
-
+        # todo: sanitize data. If column contains non_numerical data, drop it. i.e generalize this
         # drop last column from data frame
         self.train_df = self.train_df.iloc[:, :-1]
 
@@ -190,6 +186,15 @@ class K_Means:
             new_centroid = rand_location
 
         return new_centroid
+
+    def get_SSE(self):
+        """
+        returns SSE for the resulting clusters
+        :return:
+        """
+        SSE = 0
+
+        return SSE
 
 
 # todo: test this, I think this works
