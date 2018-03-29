@@ -39,15 +39,16 @@ class K_Means:
 
         # centroids for clustering
         self.centroids = []
-
         # results of clustering
         self.cluster_results = {}
+
+        self.sse = 0
 
     def pre_process(self):
         # todo: sanitize data. If column contains non_numerical data, drop it. i.e generalize this
         # drop last column from data frame
-        self.train_df = self.train_df.iloc[:, :-1]
-
+        # self.train_df = self.train_df.iloc[:, :-1]
+        pass
     def initialize(self):
         """
         Initializes random centroids for k-means algorithm
@@ -76,8 +77,7 @@ class K_Means:
         Converge on centroids. First, cluster on centroids.
         Then take average of cluster. Finally, assign new centroids
 
-        todo: check this logic
-        Repeat until centroids no longer move or SSE reaches minimum
+        Repeat until centroids no longer move
         """
 
         # use this to assign point
@@ -86,8 +86,6 @@ class K_Means:
         # for each data point, calculates dist to each cluster
         nump_arr = self.train_df.as_matrix()
 
-        k = 0
-
         not_converged = True
 
         while not_converged:
@@ -95,11 +93,13 @@ class K_Means:
             # store current centroid locations
             c_locations = [x.location for x in self.centroids]
 
+            # update centroids
+            self.centroids = self.update_centroids()
+
             for point in enumerate(nump_arr):
                 min_centroid = None
                 min_dist = float('inf')
                 for centroid in centroids:
-                    # print(centroid)
                     dist = euclid_dist(point[1], centroid)
                     # update centroid
                     if dist < min_dist:
@@ -111,7 +111,6 @@ class K_Means:
                 # assign row to cluster number
                 self.centroids[min_centroid].cluster.append(point[1])
 
-            self.update_centroids()
 
             # get new centroid locations
             new_c_locations = [x.location for x in self.centroids]
@@ -120,11 +119,13 @@ class K_Means:
             if c_locations == new_c_locations:
                 not_converged = False
 
-            k += 1
+
 
     def update_centroids(self):
         """
         assigns new point to each centroid based on the mean of their respective clusters
+        :return:
+            new list of centroids
         """
 
         new_centroids = []
@@ -141,7 +142,7 @@ class K_Means:
             # update cluster
             new_centroids.append(new_centroid)
 
-        self.centroids = new_centroids
+        return new_centroids
 
     def write(self):
 
@@ -153,9 +154,11 @@ class K_Means:
 
         for row in results:
             result = results[row]
-            print(results[row])
             out.write(str(result) + "\n")
 
+        # write sse
+        sse = self.get_sse()
+        out.write(str(sse) + "\n")
         out.close()
 
     def get_mean(self, cluster):
@@ -187,17 +190,27 @@ class K_Means:
 
         return new_centroid
 
-    def get_SSE(self):
+    def get_sse(self):
         """
-        returns SSE for the resulting clusters
+        returns sse for the resulting clusters
         :return:
+            sum squared distance of clustering
         """
-        SSE = 0
+        sse = 0
 
-        return SSE
+        for centroid in self.centroids:
+
+            cluster = centroid.cluster
+            for point in cluster:
+                dist = euclid_dist(point, centroid)
+                squared_dist = math.pow(dist, 2)
+
+                sse += squared_dist
+
+        self.sse = sse
+        return sse
 
 
-# todo: test this, I think this works
 def euclid_dist(point, centroid):
     """
     Returns a double representing the Euclidean distance between two point
@@ -240,28 +253,35 @@ def run():
     print("Complete. Results written to " + "'" + output + "'")
 
 
-def test(dataset, test_set, out):
+# this is used to run a data set with 2=> k <=10 and get the average of 10 runs for each k
+def testing(dataset, test_set, out):
     k_means = K_Means(dataset, test_set, out)
 
-    k_means.pre_process()
+    # k_means.pre_process()
     k_means.initialize()
     k_means.converge()
     k_means.write()
+    return k_means.get_sse()
 
-    print("Complete. Results written to " + "'" + out + "'")
+    # print("Complete. Results written to " + "'" + out + "'")
 
 
 if __name__ == "__main__":
     # check correct length args
     if len(sys.argv) == 1:
-        print("No arguments passed, running test mode. Test args: [iris.data 3 irisOutput.dat]")
+        print("running testing")
         # test set has three class labels. So using k = 3 to test.
-        test("iris.data", "3", "irisOutput.dat")
+        for x in range(2,11):
+            sse_s = []
+            for y in range(5):
+                sse = testing("customer.data", x, "customerOutput.dat")
+                sse_s.append(sse)
+            print(sum(sse_s) / float(len(sse_s)))
     elif len(sys.argv[1:]) == 3:
         print("Generating results")
         run()
     else:
-        print("Invalid number of arguments passed. Please input: [Readfile MinimumSupport OutputFile]")
+        print("Invalid number of arguments passed. Please input: [Readfile k OutputFile]")
 
 stop = timeit.default_timer()
 
