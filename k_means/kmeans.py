@@ -44,11 +44,6 @@ class K_Means:
 
         self.sse = 0
 
-    def pre_process(self):
-        # todo: sanitize data. If column contains non_numerical data, drop it. i.e generalize this
-        # drop last column from data frame
-        # self.train_df = self.train_df.iloc[:, :-1]
-        pass
     def initialize(self):
         """
         Initializes random centroids for k-means algorithm
@@ -111,15 +106,12 @@ class K_Means:
                 # assign row to cluster number
                 self.centroids[min_centroid].cluster.append(point[1])
 
-
             # get new centroid locations
             new_c_locations = [x.location for x in self.centroids]
 
             # if old and new centroids are the same, stop algorithm
             if c_locations == new_c_locations:
                 not_converged = False
-
-
 
     def update_centroids(self):
         """
@@ -245,7 +237,6 @@ def run():
 
     k_means = K_Means(training, k, output)
 
-    k_means.pre_process()
     k_means.initialize()
     k_means.converge()
     k_means.write()
@@ -257,21 +248,22 @@ def run():
 def testing(dataset, test_set, out):
     k_means = K_Means(dataset, test_set, out)
 
-    # k_means.pre_process()
     k_means.initialize()
     k_means.converge()
     k_means.write()
-    return k_means.get_sse()
 
-    # print("Complete. Results written to " + "'" + out + "'")
+    return k_means.get_sse()
 
 
 if __name__ == "__main__":
     # check correct length args
     if len(sys.argv) == 1:
-        print("running testing")
+        testing("iris.data","3","irisOutput.dat")
+    elif len(sys.argv) == 2:
+        print("Run testing")
+        print("SSE for k 2 through 10, descending:")
         # test set has three class labels. So using k = 3 to test.
-        for x in range(2,11):
+        for x in range(2, 11):
             sse_s = []
             for y in range(5):
                 sse = testing("customer.data", x, "customerOutput.dat")
